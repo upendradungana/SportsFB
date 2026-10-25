@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+import Link from "next/link";
+import { communities, useSports } from "./sports-store";
 
 type IconName =
   | "home"
@@ -54,84 +56,23 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return <svg {...common}>{paths[name]}</svg>;
 }
 
-type Post = {
-  id: number;
-  name: string;
-  handle: string;
-  initials: string;
-  avatar: string;
-  time: string;
-  sport: string;
-  body: string;
-  likes: number;
-  replies: number;
-  image?: "court" | "stadium";
-};
-
-const initialPosts: Post[] = [
-  {
-    id: 1,
-    name: "Maya Rios",
-    handle: "mayarios",
-    initials: "MR",
-    avatar: "avatar-coral",
-    time: "18 min ago",
-    sport: "Basketball",
-    body: "That fourth-quarter run was unreal. The whole arena felt like it was shaking 🏀",
-    likes: 248,
-    replies: 32,
-    image: "court",
-  },
-  {
-    id: 2,
-    name: "Jordan Lee",
-    handle: "jlee_runs",
-    initials: "JL",
-    avatar: "avatar-blue",
-    time: "1 hr ago",
-    sport: "Running",
-    body: "First 10K in the books. Shoutout to everyone in the Saturday Miles crew who kept me moving when my legs had other plans. What a morning. 🏁",
-    likes: 86,
-    replies: 14,
-  },
-  {
-    id: 3,
-    name: "Ari Patel",
-    handle: "aripatel",
-    initials: "AP",
-    avatar: "avatar-violet",
-    time: "3 hrs ago",
-    sport: "Football",
-    body: "Sunday picks are in. I have a feeling this is the week the underdogs make some noise 👀",
-    likes: 53,
-    replies: 21,
-    image: "stadium",
-  },
-];
-
-const navItems: { label: string; icon: IconName }[] = [
-  { label: "Home", icon: "home" },
-  { label: "Explore", icon: "compass" },
-  { label: "Schedule", icon: "calendar" },
-  { label: "Saved", icon: "bookmark" },
-];
-
-const communities = [
-  { name: "Courtside Club", members: "12.4k fans", tag: "Basketball", color: "community-orange", mark: "C" },
-  { name: "The Touchline", members: "8.2k fans", tag: "Football", color: "community-green", mark: "T" },
-  { name: "Saturday Miles", members: "4.8k fans", tag: "Running", color: "community-purple", mark: "S" },
+const navItems: { label: string; icon: IconName; href: string }[] = [
+  { label: "Home", icon: "home", href: "/" },
+  { label: "Explore", icon: "compass", href: "/explore" },
+  { label: "Schedule", icon: "calendar", href: "/schedule" },
+  { label: "Saved", icon: "bookmark", href: "/saved" },
+  { label: "Communities", icon: "users", href: "/communities" },
+  { label: "Alerts", icon: "bell", href: "/notifications" },
 ];
 
 export default function Home() {
-  const [activeNav, setActiveNav] = useState("Home");
+  const { posts, addPost, likedPosts, toggleLike, savedPosts, toggleSave, following, toggleFollow, joined, toggleJoin, profile, comments, addComment } = useSports();
   const [activeFilter, setActiveFilter] = useState("For you");
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
-  const [posts, setPosts] = useState(initialPosts);
-  const [likedPosts, setLikedPosts] = useState<number[]>([]);
-  const [following, setFollowing] = useState<string[]>([]);
-  const [joined, setJoined] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  const [commentingPostId, setCommentingPostId] = useState<number | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
 
   const visiblePosts = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -146,86 +87,79 @@ export default function Home() {
     event.preventDefault();
     const body = draft.trim();
     if (!body) return;
-    setPosts((current) => [
-      {
-        id: Date.now(),
-        name: "Alex Morgan",
-        handle: "alexmorgan",
-        initials: "AM",
-        avatar: "avatar-green",
-        time: "just now",
-        sport: "Community",
-        body,
-        likes: 0,
-        replies: 0,
-      },
-      ...current,
-    ]);
+    addPost(body);
     setDraft("");
     setActiveFilter("For you");
     setNotice("Your post is live in this preview.");
     window.setTimeout(() => setNotice(""), 2800);
   }
 
-  function toggleLike(id: number) {
-    setLikedPosts((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  async function sharePost(id: number) {
+    const link = `${window.location.origin}/#post-${id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setNotice("Post link copied to clipboard.");
+    } catch {
+      setNotice(link);
+    }
+    window.setTimeout(() => setNotice(""), 2800);
   }
 
   return (
     <main className="app-shell">
       <header className="mobile-header">
-        <a className="brand" href="#top" aria-label="SportsFB home">
+        <Link className="brand" href="/" aria-label="SportsFB home">
           <span className="brand-mark"><Icon name="trophy" size={19} /></span>
           <span>sports<span className="brand-accent">fb</span></span>
-        </a>
-        <button className="icon-button notification-button" aria-label="Notifications"><Icon name="bell" /><i /></button>
+        </Link>
+        <Link className="icon-button notification-button" href="/notifications" aria-label="Notifications"><Icon name="bell" /><i /></Link>
       </header>
 
       <div className="page-grid" id="top">
         <aside className="left-rail">
-          <a className="brand desktop-brand" href="#top" aria-label="SportsFB home">
+          <Link className="brand desktop-brand" href="/" aria-label="SportsFB home">
             <span className="brand-mark"><Icon name="trophy" size={19} /></span>
             <span>sports<span className="brand-accent">fb</span></span>
-          </a>
+          </Link>
           <div className="rail-label">YOUR SPACE</div>
           <nav className="primary-nav" aria-label="Main navigation">
             {navItems.map((item) => (
-              <button key={item.label} className={`nav-link ${activeNav === item.label ? "active" : ""}`} onClick={() => setActiveNav(item.label)}>
+                <Link key={item.label} className={`nav-link ${item.label === "Home" ? "active" : ""}`} href={item.href}>
                 <Icon name={item.icon} size={19} /><span>{item.label}</span>
                 {item.label === "Schedule" && <span className="nav-count">3</span>}
-              </button>
+              </Link>
             ))}
           </nav>
-          <button className="sidebar-create" onClick={() => document.getElementById("post-composer")?.focus()}>
+          <Link className="sidebar-create" href="/#post-composer">
             <span className="create-icon"><Icon name="plus" size={18} /></span> Create a post
-          </button>
+          </Link>
 
           <div className="rail-divider" />
-          <div className="rail-section-heading"><span>YOUR COMMUNITIES</span><button aria-label="Add a community" onClick={() => setActiveNav("Explore")}><Icon name="plus" size={16} /></button></div>
+          <div className="rail-section-heading"><span>YOUR COMMUNITIES</span><Link aria-label="Explore communities" href="/communities"><Icon name="plus" size={16} /></Link></div>
           <div className="sidebar-communities">
             {communities.map((community) => (
-              <button className="sidebar-community" key={community.name} onClick={() => setSearch(community.tag)}>
+              <Link className="sidebar-community" key={community.name} href={`/communities/${community.slug}`}>
                 <span className={`community-mark ${community.color}`}>{community.mark}</span><span>{community.name}</span>
-              </button>
+              </Link>
             ))}
           </div>
           <div className="sidebar-spacer" />
-          <button className="profile-chip" onClick={() => setNotice("Profile settings are coming soon.")}>
-            <span className="avatar avatar-green">AM</span><span className="profile-copy"><strong>Alex Morgan</strong><small>@alexmorgan</small></span><Icon name="more" size={19} />
-          </button>
+          <Link className="profile-chip" href="/profile">
+            <span className="avatar avatar-green">{profile.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span><span className="profile-copy"><strong>{profile.name}</strong><small>@{profile.handle}</small></span><Icon name="more" size={19} />
+          </Link>
         </aside>
 
         <section className="feed-column" aria-label="Sports community feed">
           <div className="feed-topbar">
-            <div><span className="eyebrow">YOUR SPORTS COMMUNITY</span><h1>{activeNav === "Home" ? "Your feed" : activeNav}</h1></div>
+            <div><span className="eyebrow">YOUR SPORTS COMMUNITY</span><h1>Your feed</h1></div>
             <div className="topbar-actions">
               <label className="search-box"><Icon name="search" size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search SportsFB" aria-label="Search SportsFB" />{search && <button aria-label="Clear search" onClick={() => setSearch("")}>×</button>}</label>
-              <button className="icon-button desktop-notification" aria-label="Notifications"><Icon name="bell" /><i /></button>
+              <Link className="icon-button desktop-notification" href="/notifications" aria-label="Notifications"><Icon name="bell" /><i /></Link>
             </div>
           </div>
 
           <section className="welcome-card">
-            <div className="welcome-copy"><div className="welcome-kicker"><Icon name="sparkle" size={15} /> THE GAME IS BETTER TOGETHER</div><h2>Good to see you,<br /><span>Alex.</span></h2><p>Find your people. Talk your game. Be part of every moment.</p><button className="welcome-cta" onClick={() => setActiveNav("Explore")}>Find your community <Icon name="arrow" size={17} /></button></div>
+            <div className="welcome-copy"><div className="welcome-kicker"><Icon name="sparkle" size={15} /> THE GAME IS BETTER TOGETHER</div><h2>Good to see you,<br /><span>{profile.name.split(" ")[0]}.</span></h2><p>Find your people. Talk your game. Be part of every moment.</p><Link className="welcome-cta" href="/explore">Find your community <Icon name="arrow" size={17} /></Link></div>
             <div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="ball-shape"><span /><span /><span /></div><div className="art-star star-one">✳</div><div className="art-star star-two">✳</div><div className="art-label">PLAY<br />YOUR<br />PART</div></div>
           </section>
 
@@ -245,12 +179,13 @@ export default function Home() {
           <div className="post-list">
             {visiblePosts.length === 0 ? <div className="empty-state"><span className="empty-icon"><Icon name="search" size={23} /></span><strong>{search ? "No posts found" : "Your following feed is quiet"}</strong><p>{search ? "Try another name, sport, or keyword." : "Follow a fan from Explore to see their posts here."}</p><button onClick={() => { setSearch(""); setActiveFilter("For you"); }}>Back to your feed</button></div> : visiblePosts.map((post) => {
               const liked = likedPosts.includes(post.id);
-              return <article className="post-card" key={post.id}>
+              return <article className="post-card" id={`post-${post.id}`} key={post.id}>
                 <div className="post-heading"><span className={`avatar ${post.avatar}`}>{post.initials}</span><div className="post-author"><div><strong>{post.name}</strong><span className="verified">✓</span><span className="post-handle">@{post.handle}</span><span className="post-dot">·</span><span className="post-time">{post.time}</span></div><span className="post-topic">{post.sport}</span></div><button className="post-more" aria-label={`More options for ${post.name}'s post`}><Icon name="more" size={20} /></button></div>
                 <p className="post-body">{post.body}</p>
                 {post.image === "court" && <div className="post-visual court-visual" role="img" aria-label="Illustrated basketball court under arena lights"><div className="court-lights" /><div className="court-lines" /><div className="court-ball" /><span className="visual-caption">ALL HEART.<br />ALL GAME.</span></div>}
                 {post.image === "stadium" && <div className="post-visual stadium-visual" role="img" aria-label="Illustrated football stadium at dusk"><div className="stadium-sun" /><div className="stadium-stands" /><div className="stadium-pitch" /><span className="visual-caption">SUNDAY<br />IS OURS.</span></div>}
-                <div className="post-actions"><button className={liked ? "liked" : ""} onClick={() => toggleLike(post.id)} aria-label={liked ? "Unlike post" : "Like post"}><Icon name="heart" size={19} /><span>{post.likes + (liked ? 1 : 0)}</span></button><button onClick={() => setNotice("Replies are coming soon.")}><Icon name="message" size={18} /><span>{post.replies}</span></button><button onClick={() => setNotice("Share links are coming soon.")} aria-label="Share post"><Icon name="share" size={18} /><span>Share</span></button></div>
+                <div className="post-actions"><button className={liked ? "liked" : ""} onClick={() => toggleLike(post.id)} aria-label={liked ? "Unlike post" : "Like post"}><Icon name="heart" size={19} /><span>{post.likes + (liked ? 1 : 0)}</span></button><button className={commentingPostId === post.id ? "comment-active" : ""} onClick={() => setCommentingPostId(commentingPostId === post.id ? null : post.id)}><Icon name="message" size={18} /><span>{post.replies}</span></button><button className={savedPosts.includes(post.id) ? "saved" : ""} onClick={() => toggleSave(post.id)} aria-label={savedPosts.includes(post.id) ? "Remove saved post" : "Save post"}><Icon name="bookmark" size={18} /><span>{savedPosts.includes(post.id) ? "Saved" : "Save"}</span></button><button onClick={() => void sharePost(post.id)} aria-label="Share post"><Icon name="share" size={18} /><span>Share</span></button></div>
+                {commentingPostId === post.id && <div className="comment-thread"><div className="comment-list">{(comments[post.id] ?? []).map((comment, index) => <p className="comment-item" key={`${post.id}-${index}`}><span className="avatar avatar-green">AM</span><span><strong>{profile.name}</strong>{comment}</span></p>)}</div><form className="comment-form" onSubmit={(event) => { event.preventDefault(); const body = commentDraft.trim(); if (body) { addComment(post.id, body); setCommentDraft(""); } }}><input value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Write a reply…" aria-label="Write a reply" /><button disabled={!commentDraft.trim()}>Reply</button></form></div>}
               </article>;
             })}
           </div>
@@ -259,16 +194,16 @@ export default function Home() {
 
         <aside className="right-rail" aria-label="Sports highlights">
           <div className="right-rail-top"><span className="eyebrow">THE SIDELINE</span><span className="today-chip">TODAY</span></div>
-          <section className="side-section scores-section"><div className="section-title"><h2>Coming up</h2><button onClick={() => setActiveNav("Schedule")}>Full schedule <Icon name="arrow" size={14} /></button></div>
+          <section className="side-section scores-section"><div className="section-title"><h2>Coming up</h2><Link href="/schedule">Full schedule <Icon name="arrow" size={14} /></Link></div>
             <div className="score-card"><div className="score-meta"><span>NBA</span><span>7:30 PM</span></div><div className="score-teams"><span><i className="mini-team knicks-mini">NY</i><strong>New York</strong></span><span>vs</span><span><i className="mini-team celtics-mini">B</i><strong>Boston</strong></span></div><div className="score-bottom"><span>Madison Square Garden</span><button onClick={() => setNotice("Reminder set for this preview.")}>Remind me</button></div></div>
             <div className="score-card"><div className="score-meta"><span>MLS</span><span>8:00 PM</span></div><div className="score-teams"><span><i className="mini-team la-mini">LA</i><strong>LA Galaxy</strong></span><span>vs</span><span><i className="mini-team miami-mini">M</i><strong>Inter Miami</strong></span></div><div className="score-bottom"><span>Dignity Health Sports Park</span><button onClick={() => setNotice("Reminder set for this preview.")}>Remind me</button></div></div>
           </section>
 
-          <section className="side-section community-section"><div className="section-title"><h2>Find your people</h2><button onClick={() => setActiveNav("Explore")}>Explore <Icon name="arrow" size={14} /></button></div><p className="section-subtitle">Good conversations start with shared passion.</p>
-            <div className="community-list">{communities.map((community) => { const isJoined = joined.includes(community.name); return <article className="community-card" key={community.name}><div className="community-card-top"><span className={`community-mark ${community.color}`}>{community.mark}</span><span className="community-tag">{community.tag}</span></div><strong>{community.name}</strong><span className="community-members">{community.members}</span><button className={isJoined ? "joined" : "join-button"} onClick={() => setJoined((current) => isJoined ? current.filter((name) => name !== community.name) : [...current, community.name])}>{isJoined ? "Joined ✓" : "Join community"}</button></article>; })}</div>
+          <section className="side-section community-section"><div className="section-title"><h2>Find your people</h2><Link href="/explore">Explore <Icon name="arrow" size={14} /></Link></div><p className="section-subtitle">Good conversations start with shared passion.</p>
+            <div className="community-list">{communities.slice(0, 3).map((community) => { const isJoined = joined.includes(community.slug); return <article className="community-card" key={community.slug}><div className="community-card-top"><span className={`community-mark ${community.color}`}>{community.mark}</span><span className="community-tag">{community.tag}</span></div><strong>{community.name}</strong><span className="community-members">{community.members}</span><button className={isJoined ? "joined" : "join-button"} onClick={() => toggleJoin(community.slug)}>{isJoined ? "Joined ✓" : "Join community"}</button></article>; })}</div>
           </section>
 
-          <section className="side-section people-section"><div className="section-title"><h2>Fans to follow</h2><button onClick={() => setActiveNav("Explore")}>See all <Icon name="arrow" size={14} /></button></div><div className="fan-row"><span className="avatar avatar-coral">MR</span><span className="fan-copy"><strong>Maya Rios</strong><small>Basketball · 2.4k fans</small></span><button className={following.includes("mayarios") ? "follow-button following" : "follow-button"} onClick={() => setFollowing((current) => current.includes("mayarios") ? current.filter((name) => name !== "mayarios") : [...current, "mayarios"])} aria-label={following.includes("mayarios") ? "Unfollow Maya Rios" : "Follow Maya Rios"}>{following.includes("mayarios") ? "✓" : "+"}</button></div><div className="fan-row"><span className="avatar avatar-blue">JL</span><span className="fan-copy"><strong>Jordan Lee</strong><small>Running · 986 fans</small></span><button className={following.includes("jlee_runs") ? "follow-button following" : "follow-button"} onClick={() => setFollowing((current) => current.includes("jlee_runs") ? current.filter((name) => name !== "jlee_runs") : [...current, "jlee_runs"])} aria-label={following.includes("jlee_runs") ? "Unfollow Jordan Lee" : "Follow Jordan Lee"}>{following.includes("jlee_runs") ? "✓" : "+"}</button></div></section>
+          <section className="side-section people-section"><div className="section-title"><h2>Fans to follow</h2><Link href="/explore">See all <Icon name="arrow" size={14} /></Link></div><div className="fan-row"><span className="avatar avatar-coral">MR</span><span className="fan-copy"><strong>Maya Rios</strong><small>Basketball · 2.4k fans</small></span><button className={following.includes("mayarios") ? "follow-button following" : "follow-button"} onClick={() => toggleFollow("mayarios")} aria-label={following.includes("mayarios") ? "Unfollow Maya Rios" : "Follow Maya Rios"}>{following.includes("mayarios") ? "✓" : "+"}</button></div><div className="fan-row"><span className="avatar avatar-blue">JL</span><span className="fan-copy"><strong>Jordan Lee</strong><small>Running · 986 fans</small></span><button className={following.includes("jlee_runs") ? "follow-button following" : "follow-button"} onClick={() => toggleFollow("jlee_runs")} aria-label={following.includes("jlee_runs") ? "Unfollow Jordan Lee" : "Follow Jordan Lee"}>{following.includes("jlee_runs") ? "✓" : "+"}</button></div></section>
 
           <footer className="right-footer"><a href="#top">About</a><a href="#top">Community guidelines</a><a href="#top">Privacy</a><span>© 2026 SportsFB</span></footer>
         </aside>
