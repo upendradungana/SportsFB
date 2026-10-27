@@ -1,39 +1,55 @@
 
-name: SportsFB CI
+name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - ci-cd-root
+    branches: [main]
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
+    branches: [main]
 
 jobs:
-  build:
-    name: Install, Type-check and Build
+  test:
+    name: test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check TypeScript
-        run: npx tsc --noEmit
+      - name: Run tests
+        run: npm test -- --run
 
-      - name: Build Next.js application
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
         run: npm run build
+
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
