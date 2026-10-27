@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+jspm_packages/
+web_modules/
+
+# Production/Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# TypeScript/JavaScript build artifacts
+*.tsbuildinfo
+*.js.map
+*.d.ts.map
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Operating System files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Test coverage outputs
+coverage/
+.nyc_output/
+
+# Environment variables and secrets
+.env
+*.pem
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
