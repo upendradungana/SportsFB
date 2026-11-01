@@ -18,6 +18,8 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      - name: Vercel secrets present
+        run: test -n "${{ secrets.VERCEL_TOKEN }}" -a -n "${{ secrets.VERCEL_ORG_ID }}" -a -n "${{ secrets.VERCEL_PROJECT_ID }}" || { echo "::error::Add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID under Settings > Secrets and variables > Actions"; exit 1; }
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
