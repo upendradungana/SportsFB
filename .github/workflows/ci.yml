@@ -24,7 +24,9 @@ jobs:
       APP_URL: https://ci.invalid
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Lockfile must be committed
+        run: test -f package-lock.json || { echo "::error::package-lock.json is not committed. Run npm install locally, commit the file and push."; exit 1; }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
