@@ -21,7 +21,7 @@
     "@upstash/redis": "^1.35.0",
     "drizzle-orm": "^0.44.0",
     "next": "^15.5.0",
-    "next-auth": "5.0.0-beta.29",
+    "next-auth": "5.0.0-beta.32",
     "otpauth": "^9.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
