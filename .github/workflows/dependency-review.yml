@@ -5,6 +5,7 @@ permissions: { contents: read }
 jobs:
   review:
     runs-on: ubuntu-latest
+    continue-on-error: true # needs the dependency graph enabled; see README
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
