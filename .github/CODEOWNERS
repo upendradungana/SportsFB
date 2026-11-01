@@ -1,0 +1,16 @@
+# Replace the placeholders with your four GitHub usernames (or a team such as @your-org/leads) BEFORE turning on
+# "Require review from Code Owners". Owners need write access or the rule is ignored.
+#   @TEAM-LEAD = lead / DevOps   @SECURITY-OWNER = backend + security   @DB-OWNER = database   @FRONTEND-OWNER = UI
+*                      @TEAM-LEAD
+/.github/              @TEAM-LEAD
+/vercel.json           @TEAM-LEAD
+/package.json          @TEAM-LEAD
+/README.md             @TEAM-LEAD
+/sql/                  @DB-OWNER @TEAM-LEAD
+/src/db/               @DB-OWNER
+/src/auth.ts           @SECURITY-OWNER @TEAM-LEAD
+/src/lib/              @SECURITY-OWNER
+/src/app/api/          @SECURITY-OWNER
+/src/app/(dash)/       @FRONTEND-OWNER
+/src/components/       @FRONTEND-OWNER
+/src/app/globals.css   @FRONTEND-OWNER

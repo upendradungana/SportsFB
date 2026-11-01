@@ -1,0 +1,11 @@
+name: Bug report
+description: Something is broken
+labels: [bug]
+body:
+  - type: textarea
+    attributes: { label: What happened, description: Include the URL, your role (player/owner/admin) and the exact error text }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Steps to reproduce }
+  - type: input
+    attributes: { label: Commit or deployment URL }

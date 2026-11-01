@@ -1,0 +1,42 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env: # dummy values: the build must not need real secrets
+      DATABASE_URL: postgresql://ci:ci@localhost.invalid/ci
+      AUTH_SECRET: ci-secret-not-for-production
+      TOTP_ENC_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      UPSTASH_REDIS_REST_URL: https://ci.invalid
+      UPSTASH_REDIS_REST_TOKEN: ci
+      QSTASH_TOKEN: ci
+      QSTASH_CURRENT_SIGNING_KEY: ci
+      QSTASH_NEXT_SIGNING_KEY: ci
+      APP_URL: https://ci.invalid
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Lint (reports only for now; remove continue-on-error once clean)
+        run: npm run lint
+        continue-on-error: true
+      - name: Build
+        run: npm run build
+      - name: Dependency audit (high severity)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
