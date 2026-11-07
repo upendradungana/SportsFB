@@ -1,4 +1,5 @@
 import { z } from "zod"; import { sql } from "drizzle-orm"; import { db } from "@/db"; import { api, HttpError, requireRole } from "@/lib/guard";
+import { after } from "next/server"; import { notifyAdmins } from "@/lib/notify"; import { effectivePlan } from "@/lib/plans";
 export const GET = api(async () => {
   const u = await requireRole("OWNER");
   const r = await db.execute(sql`SELECT id, name, sport_type, address, aliases, bank_details, price_nu_per_hour, is_active, approval_status, ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng FROM facilities WHERE owner_id = ${u.id}::uuid ORDER BY created_at DESC`);
@@ -8,6 +9,19 @@ export const PATCH = api(async (req) => {
   const u = await requireRole("OWNER"); const b = z.object({ id: z.uuid(), isActive: z.boolean() }).parse(await req.json());
   const r = await db.execute(sql`UPDATE facilities SET is_active = ${b.isActive} WHERE id = ${b.id}::uuid AND owner_id = ${u.id}::uuid RETURNING id`);
   if (!r.rows[0]) throw new HttpError(404, "NOT_FOUND"); return Response.json({ ok: true });
+});
+export const POST = api(async (req) => {
+  const u = await requireRole("OWNER");
+  const pl = await effectivePlan(u.id);
+  const used = (await db.execute(sql`SELECT count(*)::int AS n FROM facilities WHERE owner_id = ${u.id}::uuid AND approval_status <> 'REJECTED'`)).rows[0].n as number;
+  if (used >= pl.max) throw new HttpError(403, "PLAN_LIMIT");
+  const b = z.object({ name: z.string().min(2).max(120), sportType: z.enum(["FOOTBALL", "TENNIS", "VOLLEYBALL", "BASKETBALL", "BADMINTON", "OTHER"]),
+    address: z.string().min(3).max(300), lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180),
+    priceNuPerHour: z.number().int().min(1).max(100000), aliases: z.string().max(200).optional(), bankDetails: z.string().min(4).max(500) }).parse(await req.json());
+  const r = await db.execute(sql`INSERT INTO facilities (owner_id, name, sport_type, address, aliases, location, price_nu_per_hour, bank_details)
+    VALUES (${u.id}::uuid, ${b.name}, ${b.sportType}, ${b.address}, ${b.aliases ?? null}, ST_SetSRID(ST_MakePoint(${b.lng}, ${b.lat}), 4326)::geography, ${b.priceNuPerHour}, ${b.bankDetails}) RETURNING id`);
+  after(() => notifyAdmins("New facility awaiting approval", b.name, "/admin?tab=facilities"));
+  return Response.json({ ok: true, id: r.rows[0].id });
 });
 export const PUT = api(async (req) => {
   const u = await requireRole("OWNER");

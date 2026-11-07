@@ -17,6 +17,11 @@ const load = async (email: string) => {
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+  // Vercel terminates TLS before forwarding requests to the Next.js server.
+  // Explicitly trust that forwarded host so OAuth callbacks are not rejected
+  // with Auth.js' UntrustedHost error in production.
+  trustHost: true,
   providers: [Google],
   pages: { signIn: "/", error: "/", signOut: "/signout" },
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 },
