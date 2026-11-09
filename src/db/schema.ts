@@ -1,12 +1,16 @@
 import { sql } from "drizzle-orm";
 import { pgTable, date, uuid, varchar, text, timestamp, boolean, integer, customType, index, jsonb } from "drizzle-orm/pg-core";
 
+// Store coordinates as PostGIS geography points; longitude is the x-coordinate.
 const geographyPoint = customType<{ data: { lat: number; lng: number }; driverData: string }>({
   dataType: () => "geography", // no "(Point, 4326)": drizzle-kit quotes custom type names. Point-ness is a CHECK in sql/002
   toDriver: (v) => `SRID=4326;POINT(${v.lng} ${v.lat})`,
 });
+
+// Use timezone-aware timestamps throughout the database.
 const ts = (n: string) => timestamp(n, { withTimezone: true });
 
+// Application accounts, including role, onboarding, security, and owner profile data.
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   googleSub: varchar("google_sub", { length: 64 }).unique(), // stable Google id; email can change
@@ -34,6 +38,7 @@ export const users = pgTable("users", {
   createdAt: ts("created_at").defaultNow().notNull(),
 });
 
+// Sports venues owned by users, with spatial location and search indexes.
 export const facilities = pgTable("facilities", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -50,6 +55,7 @@ export const facilities = pgTable("facilities", {
   createdAt: ts("created_at").defaultNow().notNull(),
 }, (t) => [index("facilities_loc_idx").using("gist", t.location), index("facilities_trgm_idx").using("gin", t.searchText.op("gin_trgm_ops"))]);
 
+// Player reservations for facilities; additional booking rules live in sql/002_integrity.sql.
 export const bookings = pgTable("bookings", {
   id: uuid("id").primaryKey().defaultRandom(),
   facilityId: uuid("facility_id").notNull().references(() => facilities.id, { onDelete: "restrict" }),
@@ -62,6 +68,7 @@ export const bookings = pgTable("bookings", {
   createdAt: ts("created_at").defaultNow().notNull(),
 }, (t) => [index("bookings_fac_idx").on(t.facilityId, t.startTime)]);
 
+// Sanitized proof-of-payment image and its hash for duplicate detection.
 export const paymentReceipts = pgTable("payment_receipts", {
   id: uuid("id").primaryKey().defaultRandom(),
   bookingId: uuid("booking_id").notNull().references(() => bookings.id, { onDelete: "cascade" }),
@@ -70,6 +77,7 @@ export const paymentReceipts = pgTable("payment_receipts", {
   uploadedAt: ts("uploaded_at").defaultNow().notNull(),
 });
 
+// Facility-owner plans and their payment, expiry, and reminder details.
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -84,6 +92,7 @@ export const subscriptions = pgTable("subscriptions", {
   createdAt: ts("created_at").defaultNow().notNull(),
 });
 
+// Append-only records of administrative actions; a database trigger enforces immutability.
 export const auditLogs = pgTable("audit_logs", { // append-only: enforced by trigger in sql/002
   id: uuid("id").primaryKey().defaultRandom(),
   actorId: uuid("actor_id"), subjectId: uuid("subject_id"), // no FKs: FK actions would UPDATE rows and be blocked
@@ -92,6 +101,7 @@ export const auditLogs = pgTable("audit_logs", { // append-only: enforced by tri
   at: ts("at").defaultNow().notNull(),
 });
 
+// Sign-in history used to show recent account access.
 export const loginEvents = pgTable("login_events", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -99,6 +109,7 @@ export const loginEvents = pgTable("login_events", {
   at: ts("at").defaultNow().notNull(),
 });
 
+// Dates or weekdays when a facility is unavailable for bookings.
 export const facilityBlocks = pgTable("facility_blocks", {
   id: uuid("id").primaryKey().defaultRandom(),
   facilityId: uuid("facility_id").notNull().references(() => facilities.id, { onDelete: "cascade" }),
@@ -107,6 +118,7 @@ export const facilityBlocks = pgTable("facility_blocks", {
   createdAt: ts("created_at").defaultNow().notNull(),
 });
 
+// In-app messages associated with a user; readAt is null until the user reads one.
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -114,6 +126,7 @@ export const notifications = pgTable("notifications", {
   readAt: ts("read_at"), createdAt: ts("created_at").defaultNow().notNull(),
 }, (t) => [index("notif_user_idx").on(t.userId, t.createdAt)]);
 
+// User-submitted feedback and its review status.
 export const feedback = pgTable("feedback", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
