@@ -3,8 +3,11 @@
 # posts a comment on the pull request with the preview URL. 
 # You can customize the workflow to fit your needs. 
 # For more information, see "Preview deploys" in the GitHub Docs.
+# This workflow creates an isolated Vercel deployment for each pull request.
+# The preview URL lets reviewers test the proposed application before it reaches production.
 name: Preview deploy
 on:
+  # Refresh the preview whenever a pull request targeting main receives new commits.
   pull_request:
     branches: [main]
 concurrency:
@@ -12,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 permissions: { contents: read, pull-requests: write }
 jobs:
+  # Build and publish the pull request version, then report its URL back to the pull request.
   deploy:
     runs-on: ubuntu-latest
     environment: preview
@@ -19,16 +23,19 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      # Install the same Node.js runtime used by the project before invoking Vercel.
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm i -g vercel@latest
+      # Download Vercel project settings, build the application, and deploy the prebuilt output.
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - id: deploy
         run: echo "url=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> "$GITHUB_OUTPUT"
       - uses: actions/github-script@v7
         with:
+          # Add the deployed address to the pull request so reviewers can open the preview directly.
           script: |
             github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number,
               body: `Preview: ${{ steps.deploy.outputs.url }}\n\nGoogle sign-in only works on URLs registered in Google Cloud Console, so test sign-in on production or a fixed preview alias.` })
