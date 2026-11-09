@@ -1,3 +1,8 @@
+# this workflow is for preview deploys of pull requests 
+# to the main branch. It uses Vercel to deploy the app and 
+# posts a comment on the pull request with the preview URL. 
+# You can customize the workflow to fit your needs. 
+# For more information, see "Preview deploys" in the GitHub Docs.
 name: Preview deploy
 on:
   pull_request:

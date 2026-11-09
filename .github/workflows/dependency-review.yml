@@ -1,4 +1,5 @@
 # Same licensing note as CodeQL: private repos need Advanced Security.
+# this is for dependency review, which is a GitHub feature that helps you identify and manage security vulnerabilities in your project's dependencies. You can customize the workflow to fit your needs. For more information, see "About dependency review" in the GitHub Docs.
 name: Dependency review
 on: { pull_request: { branches: [main] } }
 permissions: { contents: read }

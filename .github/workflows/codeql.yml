@@ -1,4 +1,7 @@
 # Free on public repos.
+
+# For private repos, see https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning#about-code-scanning
+# this is a code scanning workflow that uses CodeQL to scan your code for vulnerabilities and errors. You can customize the workflow to fit your needs. For more information, see "Configuring CodeQL analysis for your repository" in the GitHub Docs.
 name: CodeQL
 on:
   pull_request: { branches: [main] }

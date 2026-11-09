@@ -1,4 +1,7 @@
 # blsffff
+
+# This workflow is triggered on pull requests 
+# to the main branch and can also be called by other workflows.
 name: CI
 on:
   pull_request:
