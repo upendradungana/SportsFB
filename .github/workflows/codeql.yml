@@ -1,4 +1,4 @@
-# Free on public repos. On a private repo this needs GitHub Advanced Security: delete this file if you do not have it.
+# Free on public repos.
 name: CodeQL
 on:
   pull_request: { branches: [main] }
