@@ -25,7 +25,7 @@ jobs:
     steps:
       # Install the same Node.js runtime used by the project before invoking Vercel.
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm i -g vercel@latest
       # Download Vercel project settings, build the application, and deploy the prebuilt output.

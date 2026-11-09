@@ -13,7 +13,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       # Install the Node.js runtime and Vercel CLI required for the recovery command.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm i -g vercel@latest
       # Ask Vercel to restore the previous production deployment using the configured project credentials.
