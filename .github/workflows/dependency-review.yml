@@ -4,13 +4,18 @@
 #in your project's dependencies. You can customize the workflow 
 #to fit your needs. For more information, 
 #see "About dependency review" in the GitHub Docs.
+# This workflow checks pull request dependency changes for known security risks.
+# It is used to prevent high-severity vulnerabilities from entering the main branch.
 name: Dependency review
 on: { pull_request: { branches: [main] } }
 permissions: { contents: read }
 jobs:
+  # Compare dependency changes in the pull request with the repository's base revision.
   review:
     runs-on: ubuntu-latest
     steps:
+      # Make the pull request contents available before reviewing its dependency changes.
       - uses: actions/checkout@v4
+      # Fail the review when a newly introduced dependency has high or critical severity.
       - uses: actions/dependency-review-action@v4
         with: { fail-on-severity: high }

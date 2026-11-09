@@ -2,21 +2,27 @@
 
 # This workflow is triggered on pull requests 
 # to the main branch and can also be called by other workflows.
+# It validates the application before changes are merged or deployed.
+# Keeping these checks reusable lets the production workflow require the same validation.
 name: CI
 on:
+  # Run checks for proposed changes and allow another workflow to invoke this workflow.
   pull_request:
     branches: [main]
   workflow_call:
+# Prevent duplicate runs for the same branch or pull request from consuming CI resources.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
 jobs:
+  # Run the complete set of automated quality checks on a clean Ubuntu runner.
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env: # dummy values: the build must not need real secrets
+      # Use safe placeholder configuration so build-time validation does not access production services.
       DATABASE_URL: postgresql://ci:ci@localhost.invalid/ci
       AUTH_SECRET: ci-secret-not-for-production
       TOTP_ENC_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
@@ -28,10 +34,12 @@ jobs:
       APP_URL: https://ci.invalid
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
+      # Fetch the repository and install the project with the lockfile for reproducible checks.
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      # Verify types, tests, style, and production compilation before integration or deployment.
       - name: Typecheck
         run: npm run typecheck
       - name: Unit tests

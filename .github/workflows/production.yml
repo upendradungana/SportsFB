@@ -1,5 +1,8 @@
+# This workflow validates and deploys changes that land on main to the production Vercel project.
+# Manual dispatch is also available when an operator needs to redeploy the current main revision.
 name: Production deploy
 on:
+  # Deploy automatically after a merge to main or manually when requested.
   push:
     branches: [main]
   workflow_dispatch:
@@ -8,8 +11,10 @@ concurrency:
   cancel-in-progress: false
 permissions: { contents: read }
 jobs:
+  # Reuse the standard CI workflow so production only deploys a verified revision.
   ci:
     uses: ./.github/workflows/ci.yml
+  # Deploy only after CI succeeds and the production environment gate is satisfied.
   deploy:
     needs: ci
     runs-on: ubuntu-latest
@@ -18,15 +23,18 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      # Fail early with a clear message when the credentials required by Vercel are missing.
       - name: Vercel secrets present
         run: test -n "${{ secrets.VERCEL_TOKEN }}" -a -n "${{ secrets.VERCEL_ORG_ID }}" -a -n "${{ secrets.VERCEL_PROJECT_ID }}" || { echo "::error::Add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID under Settings > Secrets and variables > Actions"; exit 1; }
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm i -g vercel@latest
+      # Retrieve production settings, build the artifact, and publish it to Vercel.
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      # Confirm the deployed application responds through its health endpoint.
       - name: Smoke test
         env:
           URL: ${{ vars.PRODUCTION_URL }}

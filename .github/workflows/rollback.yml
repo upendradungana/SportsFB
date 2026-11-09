@@ -1,7 +1,10 @@
+# This manually triggered workflow restores the production Vercel deployment to a prior version.
+# It is used as an operational recovery path when the current production release is unhealthy.
 name: Rollback production
 on: { workflow_dispatch: {} }
 permissions: { contents: read }
 jobs:
+  # Perform the rollback inside the protected production environment.
   rollback:
     runs-on: ubuntu-latest
     environment: production
@@ -9,7 +12,9 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      # Install the Node.js runtime and Vercel CLI required for the recovery command.
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm i -g vercel@latest
+      # Ask Vercel to restore the previous production deployment using the configured project credentials.
       - run: vercel rollback --yes --token=${{ secrets.VERCEL_TOKEN }}

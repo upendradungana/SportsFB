@@ -6,17 +6,23 @@
 #You can customize the workflow to fit your needs. 
 #For more information, see "Configuring CodeQL analysis 
 #for your repository" in the GitHub Docs.
+# This workflow finds security problems in JavaScript and TypeScript code.
+# It runs on changes to main and weekly so newly discovered analysis rules are applied regularly.
 name: CodeQL
 on:
+  # Analyze pull requests before merge, pushes after merge, and run a scheduled security scan.
   pull_request: { branches: [main] }
   push: { branches: [main] }
   schedule: [{ cron: "0 3 * * 1" }]
 permissions: { contents: read, security-events: write, actions: read }
 jobs:
+  # Initialize CodeQL, analyze the source, and publish results to GitHub code scanning.
   analyze:
     runs-on: ubuntu-latest
     steps:
+      # CodeQL needs the repository contents available before it can inspect the source.
       - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v3
         with: { languages: javascript-typescript }
+      # Upload the analysis results so security findings appear in the repository's Security tab.
       - uses: github/codeql-action/analyze@v3

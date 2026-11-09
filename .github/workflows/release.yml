@@ -1,10 +1,15 @@
+# This workflow creates a GitHub Release whenever a semantic-version tag is pushed.
+# It centralizes release notes generation so tagged versions are easy to discover and share.
 name: Release
 on: { push: { tags: ["v*.*.*"] } }
 permissions: { contents: write }
 jobs:
+  # Turn the pushed version tag into a published GitHub Release with generated notes.
   release:
     runs-on: ubuntu-latest
     steps:
+      # Checkout provides the tagged revision used as the release source.
       - uses: actions/checkout@v4
+      # Generate release notes from the repository history and publish the tag as a release.
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env: { GH_TOKEN: "${{ github.token }}" }
