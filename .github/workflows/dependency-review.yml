@@ -17,5 +17,5 @@ jobs:
       # Make the pull request contents available before reviewing its dependency changes.
       - uses: actions/checkout@v4
       # Fail the review when a newly introduced dependency has high or critical severity.
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
         with: { fail-on-severity: high }
