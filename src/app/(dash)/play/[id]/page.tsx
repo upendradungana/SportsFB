@@ -27,7 +27,7 @@ export default function Facility() {
     <p style={{ color: "var(--muted)", marginTop: 0 }}>{f.address}{f.aliases && <> · also called {f.aliases}</>}{pos && <> · <b>{km(pos, f).toFixed(1)} km away</b></>}</p>
     <div className="two">
       <div><div className="card"><Loc lat={f.lat} lng={f.lng} me={pos} />
-<div className="row"><a className="btn" href={dir("driving")} target="_blank" rel="noreferrer" style={{ color: "#181717" }}>Directions</a><a className="btn alt" href={dir("walking")} target="_blank" rel="noreferrer">Walk</a><a className="btn alt" href={dir("transit")} target="_blank" rel="noreferrer">Transit</a></div>
+        <div className="row"><a className="btn" href={dir("driving")} target="_blank" rel="noreferrer" style={{ color: "#181717" }}>Directions</a><a className="btn alt" href={dir("walking")} target="_blank" rel="noreferrer">Walk</a><a className="btn alt" href={dir("transit")} target="_blank" rel="noreferrer">Transit</a></div></div>
         <div className="card" style={{ marginTop: 16 }}><h3 style={{ marginTop: 0 }}>Good to know</h3>
           <div className="line"><span>Price</span><b>Nu {f.price_nu_per_hour} / hour</b></div>
           <div className="line"><span>Closed</span><b>{f.closed_weekdays?.length ? "Every " + f.closed_weekdays.map((x: number) => DAYS[x]).join(", ") : "Open every day"}</b></div>
