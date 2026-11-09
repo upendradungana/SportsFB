@@ -4,6 +4,213 @@ Sports facility booking for players and facility owners (Bhutan). Next.js 15 (Ap
 
 Roles: **player** (find and book), **owner** (list facilities, approve requests, verify receipts, pay for a plan), **admin** (allowlisted email + authenticator code: verify owners, approve facilities and plan payments, handle feedback).
 
+# SportsFB Directory Structure
+
+```text
+SportsFB/
+├── .env
+├── .eslintrc.json
+├── .gitignore
+├── drizzle.config.ts
+├── next.config.mjs
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.json
+├── vercel.json
+├── vitest.config.ts
+├── .github/
+│   ├── CODEOWNERS
+│   ├── dependabot.yml
+│   ├── pull_request_template.md
+│   ├── release.yml
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml
+│   │   └── feature_request.yml
+│   └── workflows/
+│       ├── ci.yml
+│       ├── codeql.yml
+│       ├── dependency-review.yml
+│       ├── preview.yml
+│       ├── production.yml
+│       ├── release.yml
+│       └── rollback.yml
+├── .vercel/
+│   ├── .env.production.local
+│   ├── project.json
+│   ├── README.txt
+│   └── repo.json
+├── public/
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── sw.js
+├── sql/
+│   ├── 001_extensions.sql
+│   ├── 002_integrity.sql
+│   ├── 003_cleanup_duplicates.sql
+│   └── 004_backfill_trials.sql
+└── src/
+    ├── auth.ts
+    ├── instrumentation-node.ts
+    ├── instrumentation.ts
+    ├── app/
+    │   ├── globals.css
+    │   ├── icon.png
+    │   ├── layout.tsx
+    │   ├── manifest.ts
+    │   ├── page.tsx
+    │   ├── (dash)/
+    │   │   ├── layout.tsx
+    │   │   ├── admin/
+    │   │   │   ├── Client.tsx
+    │   │   │   ├── layout.tsx
+    │   │   │   ├── page.tsx
+    │   │   │   └── 2fa/
+    │   │   │       └── page.tsx
+    │   │   ├── bookings/
+    │   │   │   ├── layout.tsx
+    │   │   │   └── page.tsx
+    │   │   ├── feedback/
+    │   │   │   └── page.tsx
+    │   │   ├── notifications/
+    │   │   │   └── page.tsx
+    │   │   ├── overview/
+    │   │   │   ├── layout.tsx
+    │   │   │   └── page.tsx
+    │   │   ├── owner/
+    │   │   │   ├── layout.tsx
+    │   │   │   ├── page.tsx
+    │   │   │   ├── facilities/
+    │   │   │   │   └── page.tsx
+    │   │   │   ├── plan/
+    │   │   │   │   └── page.tsx
+    │   │   │   └── requests/
+    │   │   │       └── page.tsx
+    │   │   ├── play/
+    │   │   │   ├── layout.tsx
+    │   │   │   ├── page.tsx
+    │   │   │   └── [id]/
+    │   │   │       └── page.tsx
+    │   │   └── settings/
+    │   │       └── page.tsx
+    │   ├── api/
+    │   │   ├── admin/
+    │   │   │   ├── action/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── data/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── feedback/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── manage/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── reminders/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── sub-payment/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── sub-receipt/
+    │   │   │   │   └── [id]/
+    │   │   │   │       └── route.ts
+    │   │   │   └── totp/
+    │   │   │       └── route.ts
+    │   │   ├── auth/
+    │   │   │   └── [...nextauth]/
+    │   │   │       └── route.ts
+    │   │   ├── bookings/
+    │   │   │   ├── approve/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── mine/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── reserve/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── verify/
+    │   │   │   │   └── route.ts
+    │   │   │   └── [id]/
+    │   │   │       └── bank-details/
+    │   │   │           └── route.ts
+    │   │   ├── cron/
+    │   │   │   ├── reminders/
+    │   │   │   │   └── route.ts
+    │   │   │   └── sweep/
+    │   │   │       └── route.ts
+    │   │   ├── facilities/
+    │   │   │   ├── route.ts
+    │   │   │   └── [id]/
+    │   │   │       ├── route.ts
+    │   │   │       └── availability/
+    │   │   │           └── route.ts
+    │   │   ├── feedback/
+    │   │   │   └── route.ts
+    │   │   ├── health/
+    │   │   │   └── route.ts
+    │   │   ├── me/
+    │   │   │   ├── route.ts
+    │   │   │   ├── deactivate/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── export/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── logins/
+    │   │   │   │   └── route.ts
+    │   │   │   └── sessions/
+    │   │   │       └── route.ts
+    │   │   ├── notifications/
+    │   │   │   └── route.ts
+    │   │   ├── onboarding/
+    │   │   │   └── route.ts
+    │   │   ├── owner/
+    │   │   │   ├── blocks/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── facilities/
+    │   │   │   │   └── route.ts
+    │   │   │   └── plan/
+    │   │   │       └── route.ts
+    │   │   ├── payments/
+    │   │   │   └── upload-proof/
+    │   │   │       └── route.ts
+    │   │   ├── receipts/
+    │   │   │   └── [bookingId]/
+    │   │   │       └── route.ts
+    │   │   └── webhooks/
+    │   │       └── expire-booking/
+    │   │           └── route.ts
+    │   ├── legal/
+    │   │   └── [slug]/
+    │   │       └── page.tsx
+    │   ├── offline/
+    │   │   └── page.tsx
+    │   ├── onboarding/
+    │   │   └── page.tsx
+    │   └── signout/
+    │       └── page.tsx
+    ├── components/
+    │   ├── Bell.tsx
+    │   ├── Footer.tsx
+    │   ├── HideOnScroll.tsx
+    │   ├── MapView.tsx
+    │   ├── Nav.tsx
+    │   ├── SignInButton.tsx
+    │   ├── Sw.tsx
+    │   ├── Tabs.tsx
+    │   └── ui.tsx
+    ├── db/
+    │   ├── index.ts
+    │   └── schema.ts
+    └── lib/
+        ├── booking.ts
+        ├── client.ts
+        ├── guard.ts
+        ├── img.ts
+        ├── notify.ts
+        ├── pageGuard.ts
+        ├── phone.test.ts
+        ├── phone.ts
+        ├── plans.ts
+        ├── ratelimit.ts
+        ├── roleLayout.tsx
+        ├── subscriptions.ts
+        ├── totp.test.ts
+        └── totp.ts
+```
+
 ## 1. Run it locally
 
 ```bash
