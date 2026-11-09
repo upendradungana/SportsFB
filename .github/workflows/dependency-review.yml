@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Make the pull request contents available before reviewing its dependency changes.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Fail the review when a newly introduced dependency has high or critical severity.
       - uses: actions/dependency-review-action@v4
         with: { fail-on-severity: high }
