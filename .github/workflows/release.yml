@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Checkout provides the tagged revision used as the release source.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Generate release notes from the repository history and publish the tag as a release.
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env: { GH_TOKEN: "${{ github.token }}" }

@@ -35,7 +35,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       # Fetch the repository and install the project with the lockfile for reproducible checks.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci

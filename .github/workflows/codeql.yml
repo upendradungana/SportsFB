@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # CodeQL needs the repository contents available before it can inspect the source.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v3
         with: { languages: javascript-typescript }
       # Upload the analysis results so security findings appear in the repository's Security tab.
