@@ -33,7 +33,7 @@ jobs:
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - id: deploy
         run: echo "url=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> "$GITHUB_OUTPUT"
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           # Add the deployed address to the pull request so reviewers can open the preview directly.
           script: |
