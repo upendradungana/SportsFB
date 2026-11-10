@@ -2,10 +2,15 @@ import { sql } from "drizzle-orm";
 import { Client } from "@upstash/qstash";
 import { db } from "@/db";
 
+// Booking lifecycle limits: payment window and approval expiry are enforced in minutes/hours.
 const PAY_MIN = 15, UNAPPROVED_H = 24;
 const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+
+// Schedule a background check for this booking so stale unpaid or unapproved bookings are cleaned up automatically.
 const hook = (b: object, delay: number, id: string) =>
   qstash.publishJSON({ url: `${process.env.APP_URL}/api/webhooks/expire-booking`, body: b, delay, deduplicationId: id });
+
+// Convert database-level constraint failures into business-safe error codes without leaking raw DB details.
 const fail = (e: any) => {
   if (e?.code === "23P01") return { ok: false as const, error: "SLOT_TAKEN" };
   if (e?.code === "23505") return { ok: false as const, error: "DUPLICATE_RECEIPT" };
@@ -14,8 +19,11 @@ const fail = (e: any) => {
   throw e;
 };
 
+// Return true when a facility is blocked for the target instant in Bhutan time.
 const closedAt = (f: string, ts: string) => sql`EXISTS (SELECT 1 FROM facility_blocks b WHERE b.facility_id = ${f}::uuid AND ((b.kind = 'DATE' AND b.on_date = (${ts}::timestamptz AT TIME ZONE 'Asia/Thimphu')::date)
   OR (b.kind = 'WEEKDAY' AND b.weekday = EXTRACT(dow FROM (${ts}::timestamptz AT TIME ZONE 'Asia/Thimphu'))::int)))`;
+
+// Create a pending booking only if the facility is active, the owner is verified, and the time window is not blocked.
 export async function reserve(playerId: string, facilityId: string, start: Date, end: Date) {
   if (!(start < end) || start <= new Date()) return { ok: false as const, error: "INVALID_RANGE" };
   try {
@@ -35,6 +43,7 @@ export async function reserve(playerId: string, facilityId: string, start: Date,
   } catch (e) { return fail(e); }
 }
 
+// Approve a booking and start the payment countdown for the owner-selected facility.
 export async function approve(ownerId: string, bookingId: string) {
   const r = await db.execute(sql`
     UPDATE bookings b SET status = 'PENDING_PAYMENT', payment_deadline = now() + make_interval(mins => ${PAY_MIN})
@@ -46,6 +55,7 @@ export async function approve(ownerId: string, bookingId: string) {
 }
 
 /** Authorization lives in the WHERE clause: no row => no data. */
+// Fetch the bank details only when the booking belongs to the player and is still payable.
 export async function bankDetails(playerId: string, bookingId: string) {
   const r = await db.execute(sql`
     SELECT f.bank_details, b.payment_deadline FROM bookings b JOIN facilities f ON f.id = b.facility_id
@@ -53,6 +63,7 @@ export async function bankDetails(playerId: string, bookingId: string) {
   return r.rows[0] ? { bankDetails: r.rows[0].bank_details as string, deadline: r.rows[0].payment_deadline as string } : null;
 }
 
+// Store a payment receipt only if the booking is still in the payable state and before the deadline expires.
 export async function submitProof(playerId: string, bookingId: string, hash: string, b64: string) {
   try {
     const r = await db.execute(sql`
@@ -63,6 +74,7 @@ export async function submitProof(playerId: string, bookingId: string, hash: str
   } catch (e) { return fail(e); }
 }
 
+// Return the receipt image only for the facility owner who is verifying this booking.
 export async function receiptFor(ownerId: string, bookingId: string) {
   const r = await db.execute(sql`
     SELECT r.image_b64 FROM payment_receipts r JOIN bookings b ON b.id = r.booking_id JOIN facilities f ON f.id = b.facility_id
@@ -71,6 +83,7 @@ export async function receiptFor(ownerId: string, bookingId: string) {
 }
 
 /** Only path to CONFIRMED. FRAUD is one atomic statement: cancel + audit + strike + lock at 2. */
+// Approve, reject, or flag fraud for a booking that is awaiting payment verification.
 export async function verify(ownerId: string, bookingId: string, decision: "APPROVE" | "REJECT" | "FRAUD") {
   const own = sql`b.id = ${bookingId}::uuid AND b.facility_id = f.id AND f.owner_id = ${ownerId}::uuid AND b.status = 'PENDING_VERIFICATION'`;
   const q = decision === "APPROVE" ? sql`
@@ -93,6 +106,7 @@ export async function verify(ownerId: string, bookingId: string, decision: "APPR
 }
 
 /** Idempotent; QStash calls it per booking, sweep() calls it for everything overdue. */
+// Mark overdue unpaid bookings as expired and apply any account-level booking penalties.
 export async function expireUnpaid(bookingId?: string) {
   const r = await db.execute(sql`
     WITH e AS (UPDATE bookings SET status = 'EXPIRED' WHERE status = 'PENDING_PAYMENT' AND payment_deadline <= now()
@@ -104,6 +118,7 @@ export async function expireUnpaid(bookingId?: string) {
     SELECT count(*)::int AS n FROM e`);
   return r.rows[0]?.n as number;
 }
+// Expire bookings that were never approved within the configured approval window.
 export async function expireUnapproved(bookingId?: string) {
   const r = await db.execute(sql`
     UPDATE bookings SET status = 'EXPIRED' WHERE status = 'PENDING_APPROVAL' AND created_at <= now() - make_interval(hours => ${UNAPPROVED_H})
